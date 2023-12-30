@@ -14,3 +14,5 @@ Wheel + CTRL: change field-of-view angle
 And keyboard controls:
 
 Arrow keys rotate around central point, just like dragging the left mouse button
+
+ctrl+ mouse left to pan

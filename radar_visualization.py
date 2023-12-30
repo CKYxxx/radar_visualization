@@ -5,6 +5,7 @@ from PyQt5.QtCore import QTimer
 from pyqtgraph.opengl import GLGridItem
 from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from ui_elements import create_color_coding_ui
+from PyQt5.QtMultimedia import QMediaPlayer
 
 class RadarVisualization(QWidget):
     def __init__(self, parent=None, frame_rate=20,update_callback=None,control_handler=None):

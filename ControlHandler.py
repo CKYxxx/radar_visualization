@@ -1,3 +1,5 @@
+from PyQt5.QtMultimedia import QMediaPlayer
+
 class ControlHandler:
     def __init__(self, radar_visualization, video_player):
         self.radar_visualization = radar_visualization
@@ -66,11 +68,22 @@ class ControlHandler:
         radar_time_seconds = self.radar_visualization.frame_index / self.radar_visualization.frame_rate
         video_time_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
         self.video_player.media_player.setPosition(video_time_ms)
+    # def on_radar_frame_update(self, frame_index):
+    #     radar_time_seconds = frame_index / self.radar_visualization.frame_rate
+    #     video_position_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
+    #     print(f"Setting video position: {video_position_ms} ms")  # Debug print
+    #     self.video_player.set_position(video_position_ms)
     def on_radar_frame_update(self, frame_index):
+        # Calculate the video position based on the radar frame
         radar_time_seconds = frame_index / self.radar_visualization.frame_rate
         video_position_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
-        print(f"Setting video position: {video_position_ms} ms")  # Debug print
-        self.video_player.set_position(video_position_ms)
+
+        # Update video player position
+        self.video_player.media_player.setPosition(video_position_ms)
+
+        # Pause the video player if it's currently playing
+        if self.video_player.media_player.state() == QMediaPlayer.PlayingState:
+            self.video_player.media_player.pause()
     def update_sensors(self, frame_number):
         # Calculate the corresponding video position in milliseconds
         radar_time_seconds = frame_number / self.radar_visualization.frame_rate

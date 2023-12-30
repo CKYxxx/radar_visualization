@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
             'oxts': 2050,       # +2.05s
             'camera': -14800    # -14.8s
         }
-        self.frame_rate = 0.1  # Radar frame rate in Hz
+        self.frame_rate = 20  # Radar frame rate in Hz
 
         self.initUI()
 
@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
 
         self.radar_visualization.setup('/home/s0001593/Downloads/provizio/Dataset_mid_range/Radar/radar_fft.csv')
         self.radar_visualization.control_handler = self.control_handler
-        
+
         self.ui_elements = UIElements(self.control_handler, self.video_player, self.radar_visualization)
         main_layout.addWidget(self.ui_elements.create_control_buttons())
         main_layout.addWidget(self.ui_elements.create_video_slider())
