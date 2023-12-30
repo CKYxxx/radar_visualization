@@ -23,11 +23,16 @@ class VideoPlayer(QWidget):
         # Connect to the error signal of the media player
         self.media_player.error.connect(self.handle_media_player_error)
 
+        self.video_offset_ms = 0  # Default offset
+
+
     def play(self):
         self.media_player.play()
         # print(f"Media Player State: {self.media_player.state()}")
         # print(f"Media Player Error: {self.media_player.errorString()}")
 
+    def set_offset(self, offset_ms):
+        self.video_offset_ms = offset_ms
 
     def pause(self):
         self.media_player.pause()
@@ -40,5 +45,9 @@ class VideoPlayer(QWidget):
     def state_changed(self, state):
         print(f"Player State Changed: {state}")
 
+    def set_position(self, position):
+        if position < 0:
+            position = 0
+        self.media_player.setPosition(position)
 # End of video_player.py
 

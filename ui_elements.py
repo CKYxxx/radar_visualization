@@ -42,14 +42,13 @@ class UIElements:
     def sliderMoved(self, position):
         video_duration = self.video_player.media_player.duration()
         new_video_position = video_duration * position / self.videoSlider.maximum()
-        self.video_player.media_player.setPosition(new_video_position)
 
-        radar_frame_rate = 20
+        radar_frame_rate = 20  # Set the radar frame rate
+        radar_frame_duration = 1000 / radar_frame_rate  # Duration of each radar frame in milliseconds
+
+        # Calculate the radar frame number based on the video position and offset
         adjusted_position = new_video_position + self.radar_visualization.video_offset_ms
-        if adjusted_position < 0:
-            return
-
-        radar_frame_number = adjusted_position / 1000 * radar_frame_rate
+        radar_frame_number = adjusted_position / radar_frame_duration
         self.radar_visualization.update_frame(int(radar_frame_number))
 
     def update_slider_position(self, position):
@@ -59,6 +58,13 @@ class UIElements:
                 slider_position = self.videoSlider.maximum() * position / video_duration
                 self.videoSlider.setValue(slider_position)
 
+    def create_video_slider(self):
+        self.videoSlider = QSlider(Qt.Horizontal)
+        self.videoSlider.setMinimum(0)
+        self.videoSlider.setMaximum(1000)
+        self.videoSlider.valueChanged.connect(self.control_handler.syncWithSlider)
+
+        return self.videoSlider
 
 def create_color_coding_ui(callback):
     container = QWidget()

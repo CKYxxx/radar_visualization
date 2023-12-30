@@ -7,13 +7,18 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from ui_elements import create_color_coding_ui
 
 class RadarVisualization(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, frame_rate=20):
         super().__init__(parent)
         self.setup_view_widget()
         self.frame_index = 1
         self.radar_data = None
         self.scatter_plot = None
         self.current_color_coding = None
+        self.frame_rate = frame_rate
+        self.video_offset_ms = 0
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.view_widget)
@@ -41,10 +46,19 @@ class RadarVisualization(QWidget):
             self.radar_data = pd.read_csv(csv_path)
             if 'Frame' not in self.radar_data.columns:
                 raise ValueError("'Frame' column is missing in the data.")
-            self.timer = QTimer(self)
-            self.timer.timeout.connect(self.update)
         except Exception as e:
             print(f"Error loading file: {e}")
+
+    def start_visualization(self):
+        if not self.timer.isActive():
+            self.timer.start(1000 / self.frame_rate)  # Start visualization based on frame rate
+
+    def stop_visualization(self):
+        if self.timer.isActive():
+            self.timer.stop()
+
+    def set_video_offset(self, offset_ms):
+        self.video_offset_ms = offset_ms
 
     def update(self):
         if self.radar_data is not None and 'Frame' in self.radar_data.columns:
@@ -59,15 +73,11 @@ class RadarVisualization(QWidget):
                 self.frame_index = 1  # Loop back to the start
         else:
             print("Data is not loaded or 'Frame' column is missing.")
-            
+
     def update_frame(self, frame_number):
-        """Update the visualization to show the specified frame."""
-        # Ensure the frame number is within the valid range
         if 0 < frame_number <= len(self.radar_data['Frame'].unique()):
             self.frame_index = frame_number
             frame_data = self.radar_data[self.radar_data['Frame'] == frame_number]
-
-            # Check if a color coding is set and apply it
             if self.current_color_coding:
                 self.apply_simplified_color_coding(self.current_color_coding)
             else:
@@ -91,8 +101,7 @@ class RadarVisualization(QWidget):
             return
         color_values = self.radar_data[color_column].to_numpy()
         min_val, max_val = np.min(color_values), np.max(color_values)
-        
-        # Define the colors for each division
+        divisions = np.linspace(min_val, max_val, 7)
         division_colors = np.array([
             [1, 0, 0, 1],   # Red
             [1, 0.5, 0, 1], # Orange
@@ -102,11 +111,8 @@ class RadarVisualization(QWidget):
             [0, 0, 1, 1],   # Blue
             [0.5, 0, 0.5, 1]# Purple
         ])
-
-        division_indices = np.digitize(color_values, bins=np.linspace(min_val, max_val, len(division_colors)), right=True)
-        division_indices = np.clip(division_indices - 1, 0, len(division_colors) - 1)
-        colors = division_colors[division_indices]
-        
+        division_indices = np.digitize(color_values, divisions, right=True)
+        colors = division_colors[np.clip(division_indices - 1, 0, 6)]
         frame_data = self.radar_data[self.radar_data['Frame'] == self.frame_index]
         frame_colors = colors[self.radar_data['Frame'] == self.frame_index]
         self.update_scatter_plot(frame_data, frame_colors)
