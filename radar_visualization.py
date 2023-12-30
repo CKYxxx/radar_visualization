@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout
 from ui_elements import create_color_coding_ui
 
 class RadarVisualization(QWidget):
-    def __init__(self, parent=None, frame_rate=20):
+    def __init__(self, parent=None, frame_rate=20,update_callback=None,control_handler=None):
         super().__init__(parent)
         self.setup_view_widget()
         self.frame_index = 1
@@ -19,11 +19,14 @@ class RadarVisualization(QWidget):
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
+        self.update_callback = update_callback
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.view_widget)
         self.color_coding_ui = create_color_coding_ui(self.update_color_coding)
         layout.addWidget(self.color_coding_ui)
+
+        self.control_handler = control_handler
 
     def setup_view_widget(self):
         self.view_widget = gl.GLViewWidget()
@@ -68,11 +71,23 @@ class RadarVisualization(QWidget):
                     self.apply_simplified_color_coding(self.current_color_coding)
                 else:
                     self.update_scatter_plot(frame_data)
+
+                # Update the video position to sync with radar frame
+                if hasattr(self, 'control_handler'):
+                    self.control_handler.update_video_position()
+
                 self.frame_index += 1
             else:
-                self.frame_index = 1  # Loop back to the start
+                self.frame_index = 1
         else:
             print("Data is not loaded or 'Frame' column is missing.")
+
+        print(f"Updating radar frame: {self.frame_index}")  # Debug print
+
+        # Call method in ControlHandler after updating radar frame
+        if self.control_handler:
+            self.control_handler.on_radar_frame_update(self.frame_index)
+
 
     def update_frame(self, frame_number):
         if 0 < frame_number <= len(self.radar_data['Frame'].unique()):
@@ -133,5 +148,7 @@ class RadarVisualization(QWidget):
                 self.current_color_coding = 'Z Position (m)'
                 self.apply_simplified_color_coding('Z Position (m)')
 
+    def set_control_handler(self, control_handler):
+        self.control_handler = control_handler
     def get_widget(self):
         return self.view_widget

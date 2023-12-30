@@ -25,14 +25,19 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
 
+        # Instantiate RadarVisualization first
         self.radar_visualization = RadarVisualization(parent=self, frame_rate=self.frame_rate)
-        self.radar_visualization.setup('/home/s0001593/Downloads/provizio/Dataset_mid_range/Radar/radar_fft.csv')
 
         self.video_player = VideoPlayer('/home/s0001593/Downloads/provizio/Dataset_mid_range/Camera/camera.mkv')
         self.video_player.set_offset(self.time_offsets['camera'])
 
+        # Instantiate ControlHandler after RadarVisualization
         self.control_handler = ControlHandler(self.radar_visualization, self.video_player)
+        self.radar_visualization.set_control_handler(self.control_handler)  # Set the control handler for radar visualization
 
+        self.radar_visualization.setup('/home/s0001593/Downloads/provizio/Dataset_mid_range/Radar/radar_fft.csv')
+        self.radar_visualization.control_handler = self.control_handler
+        
         self.ui_elements = UIElements(self.control_handler, self.video_player, self.radar_visualization)
         main_layout.addWidget(self.ui_elements.create_control_buttons())
         main_layout.addWidget(self.ui_elements.create_video_slider())
@@ -47,7 +52,6 @@ class MainWindow(QMainWindow):
         dock_widget.setFloating(True)
         dock_widget.resize(800, 600)
         return dock_widget
-
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()

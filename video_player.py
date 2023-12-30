@@ -48,6 +48,7 @@ class VideoPlayer(QWidget):
     def set_position(self, position):
         if position < 0:
             position = 0
+        print(f"Video player position set to: {position}")  # Debug print
         self.media_player.setPosition(position)
 # End of video_player.py
 
