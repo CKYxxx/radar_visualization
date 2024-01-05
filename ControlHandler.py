@@ -26,50 +26,58 @@ class ControlHandler:
         self.main_window.visualization_timer.stop()
 
     def stepForward(self):
-        # Step forward in radar visualization
+        print("Stepping forward")
         if self.radar_visualization.frame_index < len(self.radar_visualization.radar_data) - 1:
             new_frame_index = self.radar_visualization.frame_index + 1
+            print(f"New radar frame index: {new_frame_index}")
             self.radar_visualization.update_frame(new_frame_index)
-            self.syncWithFrameIndex(new_frame_index)
+            self.lidar_handler.update_visualization_for_frame_with_filter(new_frame_index)
+            self.radar_visualization.redraw_current_frame()
+            self.lidar_handler.redraw_current_frame()
+            self.main_window.visualization_widget.update()
 
     def stepBackward(self):
-        # Step backward in radar visualization
-        if self.radar_visualization.frame_index > 1:
+        print("Stepping backward")
+        if self.radar_visualization.frame_index > 0:
             new_frame_index = self.radar_visualization.frame_index - 1
             self.radar_visualization.update_frame(new_frame_index)
-            self.syncWithFrameIndex(new_frame_index)
+            self.lidar_handler.update_visualization_for_frame_with_filter(new_frame_index)
+            self.radar_visualization.redraw_current_frame()
+            self.lidar_handler.redraw_current_frame()
+            self.main_window.visualization_widget.update()
 
     def syncWithSlider(self, value):
-        # Update video position based on slider value
+        print(f"Syncing with slider value: {value}")
         total_duration = self.video_player.media_player.duration()
         new_video_position = total_duration * value / 1000
-        self.video_player.set_position(new_video_position + self.radar_visualization.video_offset_ms)
+        self.video_player.set_position(new_video_position)
 
-        # Update radar visualization frame
         radar_frame_rate = self.radar_visualization.frame_rate
-        new_radar_frame = int((new_video_position + self.radar_visualization.video_offset_ms) / 1000 * radar_frame_rate)
+        new_radar_frame = int(new_video_position / 1000 * radar_frame_rate)
         self.radar_visualization.update_frame(new_radar_frame)
+        self.lidar_handler.update_visualization_for_frame_with_filter(new_radar_frame)
+        self.radar_visualization.redraw_current_frame()
+        self.lidar_handler.redraw_current_frame()
 
-        # Update LiDAR visualization to match the radar frame
-        self.lidar_handler.update_to_match_radar(new_radar_frame)
 
     def syncWithFrameIndex(self, frame_index):
-        # Calculate the video position based on radar frame index
+        print(f"Syncing with frame index: {frame_index}")
         radar_time_seconds = frame_index / self.radar_visualization.frame_rate
-        video_position_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
-
-        # Update the video position
+        video_position_ms = radar_time_seconds * 1000
         self.video_player.media_player.setPosition(video_position_ms)
 
-        # Update the LiDAR visualization to match the radar frame
-        self.lidar_handler.update_to_match_radar(frame_index)
-
-    def on_radar_frame_update(self, frame_index):
-        # This method can be used for additional callbacks when radar frame updates
-        pass
+        self.radar_visualization.update_frame(frame_index)
+        self.lidar_handler.update_visualization_for_frame(frame_index)
+        self.radar_visualization.redraw_current_frame()
+        self.lidar_handler.redraw_current_frame()
 
     def update_sensors(self, frame_number):
-        # Update the video position based on radar frame number
+        print(f"Updating sensors for frame number: {frame_number}")
         radar_time_seconds = frame_number / self.radar_visualization.frame_rate
-        video_position_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
+        video_position_ms = radar_time_seconds * 1000
         self.video_player.media_player.setPosition(video_position_ms)
+
+        self.radar_visualization.update_frame(frame_number)
+        self.lidar_handler.update_visualization_for_frame(frame_number)
+        self.radar_visualization.redraw_current_frame()
+        self.lidar_handler.redraw_current_frame()

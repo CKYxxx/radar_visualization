@@ -21,6 +21,21 @@ class MainWindow(QMainWindow):
             'oxts': 2050,       # +2.05s
             'camera': -14800    # -14.8s
         }
+        self.sensor_extrinsics = {
+            'radar': {
+                'position': {'x': 1.98, 'y': -0.005, 'z': 1.36},
+                'orientation': {'yaw': 0, 'pitch': 0, 'roll': 0}
+            },
+            'velodyne': {
+                'position': {'x': 1.158, 'y': 0.0, 'z': 1.65},
+                'orientation': {'yaw': 1, 'pitch': 0, 'roll': 0}
+            },
+            'camera': {
+                'position': {'x': 1.602, 'y': 0.106, 'z': 1.72},
+                'orientation': {'yaw': 0, 'pitch': 2, 'roll': 0}
+            }
+        }
+        
         self.frame_rate = 10  # Radar frame rate in Hz
 
         self.initUI()
@@ -36,7 +51,7 @@ class MainWindow(QMainWindow):
         self.visualization_widget = GLViewWidget()
 
         # Instantiate RadarVisualization
-        self.radar_visualization = RadarVisualization(self.visualization_widget, frame_rate=self.frame_rate, video_offset_ms=self.time_offsets['camera'])
+        self.radar_visualization = RadarVisualization(self.visualization_widget, frame_rate=self.frame_rate, video_offset_ms=self.time_offsets['camera'],sensor_extrinsics=self.sensor_extrinsics)
         self.radar_visualization.setup('/home/s0001593/Downloads/provizio/Dataset_mid_range/Radar/radar_fft.csv')
 
         # Instantiate VideoPlayer
@@ -44,7 +59,7 @@ class MainWindow(QMainWindow):
         self.video_player.set_offset(self.time_offsets['camera'])
 
         # Instantiate LidarHandler using the same GLViewWidget from RadarVisualization
-        self.lidar_handler = LidarHandler(self.visualization_widget, self.time_offsets['velodyne'], self.frame_rate)
+        self.lidar_handler = LidarHandler(self.visualization_widget, self.time_offsets['velodyne'], self.frame_rate,self.sensor_extrinsics)
         self.lidar_handler.load_data('/home/s0001593/Downloads/provizio/Dataset_mid_range/Lidar/velodyne.pcap', 'VLP-16')
 
         # Instantiate ControlHandler
@@ -78,8 +93,7 @@ class MainWindow(QMainWindow):
         #     self.lidar_handler.redraw_current_frame()
         #     self.first_update = False
 
-
-
+   
     def createDockWidget(self, title, widget):
         dock_widget = QDockWidget(title, self)
         dock_widget.setWidget(widget)

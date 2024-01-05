@@ -8,7 +8,7 @@ from ui_elements import create_color_coding_ui
 from PyQt5.QtMultimedia import QMediaPlayer
 
 class RadarVisualization(QWidget):
-    def __init__(self, view_widget, frame_rate=20, update_callback=None, control_handler=None, video_offset_ms=0):
+    def __init__(self, view_widget, frame_rate=20, update_callback=None, control_handler=None, video_offset_ms=0,sensor_extrinsics=None):
         super().__init__()
         self.view_widget = view_widget
         self.frame_index = 1
@@ -19,7 +19,7 @@ class RadarVisualization(QWidget):
         self.video_offset_ms = video_offset_ms
         self.update_callback = update_callback
         self.control_handler = control_handler
-
+        self.sensor_extrinsics = sensor_extrinsics
         # Setup layout and UI
         layout = QVBoxLayout(self)
         layout.addWidget(self.view_widget)
@@ -51,26 +51,34 @@ class RadarVisualization(QWidget):
             self.update_scatter_plot_for_frame(frame_number)
    
     def update_scatter_plot_for_frame(self, frame_index):
-        # Check if the frame index is in the 'Frame' column of radar_data
+        # print(f"Updating scatter plot for radar frame: {frame_index}")
         if frame_index in self.radar_data['Frame'].values:
-            # Get the data for the specific frame
             frame_data = self.radar_data[self.radar_data['Frame'] == frame_index]
-
-            # Extract coordinates from frame_data
             points = frame_data[['X Position (m)', 'Y Position (m)', 'Z Position (m)']].to_numpy()
-            points[:, 1] *= -1  # Flip the Y-axis if needed
+            # points[:, 1] *= -1  # Flip Y-axis
 
-            # Determine the colors for the points
+            # Extract 'x', 'y', and 'z' values
+            x_values = points[:, 0]
+            y_values = points[:, 1]
+            z_values = points[:, 2]
+
+            # Create a new array with 'x', 'y', and 'z' values
+            xyz_values = np.column_stack((x_values, y_values, z_values))
+
             colors = self.get_colors_for_frame(frame_data)
 
-            # Update or create the scatter plot
             if self.scatter_plot is None:
-                self.scatter_plot = gl.GLScatterPlotItem(pos=points, size=0.1, color=colors, pxMode=False)
+                # print("Creating new radar scatter plot item")
+                self.scatter_plot = gl.GLScatterPlotItem(pos=xyz_values, size=0.1, color=colors, pxMode=False)
                 self.view_widget.addItem(self.scatter_plot)
             else:
-                self.scatter_plot.setData(pos=points, color=colors)
+                # print("Updating existing radar scatter plot item")
+                self.scatter_plot.setData(pos=xyz_values, color=colors)
         else:
-            print(f"Frame index {frame_index} is out of radar data range.")
+            print(f"Radar frame index {frame_index} is out of radar data range.")
+
+
+
 
     def get_colors_for_frame(self, frame_data):
         # Implement the logic to get color values for each point
