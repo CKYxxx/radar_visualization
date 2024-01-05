@@ -3,3 +3,5 @@ Dataset_mid_range/
 __pycache__/
 s/
 
+worker.py
+velodyne_record.launch
