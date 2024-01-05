@@ -8,15 +8,24 @@ class ControlHandler:
         self.main_window = main_window
 
     def startVisualization(self):
-        # Start video playback
-        self.video_player.play()
+        # Determine the correct time to start the video based on the radar frame and time offset
+        if self.main_window.time_offsets['camera'] >= 0:
+            # Positive or zero offset: Start video at a specific position
+            video_start_position_ms = self.main_window.time_offsets['camera']
+            self.video_player.media_player.setPosition(video_start_position_ms)
+            self.video_player.play()
+        else:
+            # Negative offset: Delay video start until the corresponding radar frame
+            # Calculate the radar frame at which to start the video
+            delay_in_frames = abs(self.main_window.time_offsets['camera']) / 1000 * self.radar_visualization.frame_rate
+            self.main_window.delayed_video_start_frame = int(delay_in_frames)
 
-        # Set the initial radar and LiDAR frame indices
+        # Set the initial radar and LiDAR frame indices and start visualization
         current_radar_frame = self.radar_visualization.get_current_frame_index()
         self.lidar_handler.set_frame_index(self.lidar_handler.calculate_lidar_index(current_radar_frame))
-
-        # Start the centralized timer in MainWindow
         self.main_window.visualization_timer.start(100)  # Adjust the interval as needed
+
+
 
     def pauseVisualization(self):
         # Pause the video player

@@ -77,21 +77,18 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.BottomDockWidgetArea, self.createDockWidget("Video Player", self.video_player))
 
     def update_visualization(self):
-        # Clear previous visualization items
-        # self.visualization_widget.items.clear()
-
-        # Update radar visualization
+        # Update radar and lidar visualizations
         self.radar_visualization.update()
-        self.radar_visualization.redraw_current_frame()
-        # In autoplay mode, update LiDAR independently
         self.lidar_handler.update_visualization()
-        # Update LiDAR visualization to match the current radar frame only once at the start
-        # Subsequent updates will be independent in autoplay
-        # if self.first_update:
-        #     current_radar_frame = self.radar_visualization.get_current_frame_index()
-        #     self.lidar_handler.update_to_match_radar(current_radar_frame)
-        #     self.lidar_handler.redraw_current_frame()
-        #     self.first_update = False
+
+        # Handle delayed video start for negative offset
+        if hasattr(self, 'delayed_video_start_frame'):
+            current_radar_frame = self.radar_visualization.get_current_frame_index()
+            if current_radar_frame >= self.delayed_video_start_frame:
+                self.video_player.play()
+                del self.delayed_video_start_frame  # Remove attribute after starting video
+
+      
 
    
     def createDockWidget(self, title, widget):
