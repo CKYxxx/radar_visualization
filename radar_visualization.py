@@ -8,42 +8,23 @@ from ui_elements import create_color_coding_ui
 from PyQt5.QtMultimedia import QMediaPlayer
 
 class RadarVisualization(QWidget):
-    def __init__(self, parent=None, frame_rate=20,update_callback=None,control_handler=None,video_offset_ms=0):
-        super().__init__(parent)
-        self.setup_view_widget()
+    def __init__(self, view_widget, frame_rate=20, update_callback=None, control_handler=None, video_offset_ms=0):
+        super().__init__()
+        self.view_widget = view_widget
         self.frame_index = 1
         self.radar_data = None
         self.scatter_plot = None
         self.current_color_coding = None
         self.frame_rate = frame_rate
         self.video_offset_ms = video_offset_ms
-
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update)
         self.update_callback = update_callback
+        self.control_handler = control_handler
 
+        # Setup layout and UI
         layout = QVBoxLayout(self)
         layout.addWidget(self.view_widget)
         self.color_coding_ui = create_color_coding_ui(self.update_color_coding)
         layout.addWidget(self.color_coding_ui)
-
-        self.control_handler = control_handler
-
-    def setup_view_widget(self):
-        self.view_widget = gl.GLViewWidget()
-        self.view_widget.opts['distance'] = 20
-        self.setup_grid()
-
-    def setup_grid(self):
-        x_axis_range = 100
-        y_axis_range = 50
-        grid_spacing = 5
-
-        self.grid = GLGridItem()
-        self.grid.setSize(x=x_axis_range, y=y_axis_range, z=0)
-        self.grid.setSpacing(x=grid_spacing, y=grid_spacing, z=1)
-        self.grid.translate(x_axis_range / 2, 0, 0)
-        self.view_widget.addItem(self.grid)
 
     def setup(self, csv_path):
         try:
@@ -53,59 +34,49 @@ class RadarVisualization(QWidget):
         except Exception as e:
             print(f"Error loading file: {e}")
 
-    def start_visualization(self):
-        if not self.timer.isActive():
-            self.timer.start(1000 / self.frame_rate)  # Start visualization based on frame rate
-
-    def stop_visualization(self):
-        if self.timer.isActive():
-            self.timer.stop()
-
-    def set_video_offset(self, offset_ms):
-        self.video_offset_ms = offset_ms
-
     def update(self):
-        if self.radar_data is not None and 'Frame' in self.radar_data.columns:
-            frame_data = self.radar_data[self.radar_data['Frame'] == self.frame_index]
-            if not frame_data.empty:
-                if self.current_color_coding:
-                    self.apply_simplified_color_coding(self.current_color_coding)
-                else:
-                    self.update_scatter_plot(frame_data)
-
-                self.frame_index += 1
-            else:
-                self.frame_index = 1
+        if self.frame_index < len(self.radar_data['Frame'].unique()):
+            self.frame_index += 1
         else:
-            print("Data is not loaded or 'Frame' column is missing.")
+            self.frame_index = 1  # Loop back to the start or handle as needed
 
-        print(f"Updating radar frame: {self.frame_index}")  # Debug print
+        self.update_scatter_plot_for_frame(self.frame_index)
 
-
+    def get_current_frame_index(self):
+        return self.frame_index
 
     def update_frame(self, frame_number):
         if 0 < frame_number <= len(self.radar_data['Frame'].unique()):
             self.frame_index = frame_number
-            frame_data = self.radar_data[self.radar_data['Frame'] == frame_number]
-            if self.current_color_coding:
-                self.apply_simplified_color_coding(self.current_color_coding)
+            self.update_scatter_plot_for_frame(frame_number)
+   
+    def update_scatter_plot_for_frame(self, frame_index):
+        # Check if the frame index is in the 'Frame' column of radar_data
+        if frame_index in self.radar_data['Frame'].values:
+            # Get the data for the specific frame
+            frame_data = self.radar_data[self.radar_data['Frame'] == frame_index]
+
+            # Extract coordinates from frame_data
+            points = frame_data[['X Position (m)', 'Y Position (m)', 'Z Position (m)']].to_numpy()
+            points[:, 1] *= -1  # Flip the Y-axis if needed
+
+            # Determine the colors for the points
+            colors = self.get_colors_for_frame(frame_data)
+
+            # Update or create the scatter plot
+            if self.scatter_plot is None:
+                self.scatter_plot = gl.GLScatterPlotItem(pos=points, size=0.1, color=colors, pxMode=False)
+                self.view_widget.addItem(self.scatter_plot)
             else:
-                self.update_scatter_plot(frame_data)
+                self.scatter_plot.setData(pos=points, color=colors)
         else:
-            print(f"Frame number {frame_number} is out of range.")
+            print(f"Frame index {frame_index} is out of radar data range.")
 
-    def update_scatter_plot(self, frame_data, colors=None):
-        points = frame_data[['X Position (m)', 'Y Position (m)', 'Z Position (m)']].values
-        points[:, 1] *= -1  # Flip the Y-axis
-        if colors is None:
-            # colors = np.random.rand(len(points), 4)
-            colors = np.array([[1, 1, 0, 1]] * len(points))  # RGBA for yellow
-        if self.scatter_plot is None:
-            self.scatter_plot = gl.GLScatterPlotItem(pos=points, size=0.1, color=colors, pxMode=False)
-            self.view_widget.addItem(self.scatter_plot)
-        else:
-            self.scatter_plot.setData(pos=points, color=colors)
-
+    def get_colors_for_frame(self, frame_data):
+        # Implement the logic to get color values for each point
+        # For example, you can use the same color for all points or based on some data column
+        return np.array([[1, 1, 0, 1]] * len(frame_data))  # RGBA for yellow as an example
+    
     def apply_simplified_color_coding(self, color_column):
         if self.radar_data is None:
             return
@@ -145,5 +116,15 @@ class RadarVisualization(QWidget):
 
     def set_control_handler(self, control_handler):
         self.control_handler = control_handler
-    def get_widget(self):
-        return self.view_widget
+    # def get_widget(self):
+    #     return self.view_widget
+    def redraw_current_frame(self):
+        # Check if the current frame index is valid
+        if self.frame_index in self.radar_data['Frame'].unique():
+            # Get data for the current frame
+            frame_data = self.radar_data[self.radar_data['Frame'] == self.frame_index]
+            # Update the scatter plot for this frame
+            self.update_scatter_plot_for_frame(self.frame_index)
+        else:
+            print(f"Radar frame index {self.frame_index} is out of range.")
+

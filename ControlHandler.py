@@ -1,115 +1,75 @@
 from PyQt5.QtMultimedia import QMediaPlayer
 
 class ControlHandler:
-    def __init__(self, radar_visualization, video_player,lidar_handler):
+    def __init__(self, radar_visualization, video_player, lidar_handler, main_window):
         self.radar_visualization = radar_visualization
         self.video_player = video_player
         self.lidar_handler = lidar_handler
-        # Set the radar visualization's update callback to a new method
-        radar_visualization.update_callback = self.on_radar_frame_update
-
+        self.main_window = main_window
 
     def startVisualization(self):
-        self.radar_visualization.start_visualization()  # Start the radar visualization
-        # Calculate the corresponding video time
-        radar_time_seconds = self.radar_visualization.frame_index / self.radar_visualization.frame_rate
-        video_time_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
-        # print(f"Current video time (ms): {video_time_ms}")        # Check if the calculated video time is non-negative
-        # if video_time_ms >= 0:
-        #     # Update the video position and start playback
-        #     self.video_player.set_position(video_time_ms)
-        #     self.video_player.play()
-        # else:
-        #     # If the position is negative, do not start the video yet
-        #     self.video_player.set_position(0)
+        # Start video playback
         self.video_player.play()
-        self.lidar_handler.start_playback()
+
+        # Set the initial radar and LiDAR frame indices
+        current_radar_frame = self.radar_visualization.get_current_frame_index()
+        self.lidar_handler.set_frame_index(self.lidar_handler.calculate_lidar_index(current_radar_frame))
+
+        # Start the centralized timer in MainWindow
+        self.main_window.visualization_timer.start(100)  # Adjust the interval as needed
 
     def pauseVisualization(self):
-        self.radar_visualization.timer.stop()
+        # Pause the video player
         self.video_player.pause()
-        self.lidar_handler.stop_playback()
-
+        
+        # Stop the visualization timer in MainWindow
+        self.main_window.visualization_timer.stop()
 
     def stepForward(self):
+        # Step forward in radar visualization
         if self.radar_visualization.frame_index < len(self.radar_visualization.radar_data) - 1:
-            # Move to the next radar frame
             new_frame_index = self.radar_visualization.frame_index + 1
             self.radar_visualization.update_frame(new_frame_index)
+            self.syncWithFrameIndex(new_frame_index)
 
-            # Calculate the corresponding video time
-            radar_time_seconds = new_frame_index / self.radar_visualization.frame_rate
-            video_time_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
-
-            # Update the video position
-            self.video_player.media_player.setPosition(video_time_ms)
-
-            # Update the LiDAR visualization to match the new radar frame
-            self.lidar_handler.update_to_match_radar(new_frame_index)
-
-    
     def stepBackward(self):
-        # Check if the current frame is greater than the first frame
+        # Step backward in radar visualization
         if self.radar_visualization.frame_index > 1:
-            # Move to the previous radar frame
             new_frame_index = self.radar_visualization.frame_index - 1
             self.radar_visualization.update_frame(new_frame_index)
+            self.syncWithFrameIndex(new_frame_index)
 
-            # Calculate the corresponding video time
-            radar_time_seconds = new_frame_index / self.radar_visualization.frame_rate
-            video_time_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
-
-            # Update the video position
-            self.video_player.media_player.setPosition(video_time_ms)
-
-            # Update the LiDAR visualization to match the new radar frame
-            self.lidar_handler.update_to_match_radar(new_frame_index)
-
-    # def syncWithSlider(self, value):
-    #     # Update video
-    #     total_duration = self.video_player.media_player.duration()
-    #     new_video_position = total_duration * value / 1000
-    #     self.video_player.set_position(new_video_position + self.radar_visualization.video_offset_ms)
-
-    #     # Update radar visualization
-    #     radar_frame_rate = self.radar_visualization.frame_rate  # assuming frame_rate is defined in radar_visualization
-    #     new_radar_frame = int((new_video_position + self.radar_visualization.video_offset_ms) / 1000 * radar_frame_rate)
-    #     self.radar_visualization.update_frame(new_radar_frame)
-    #     # Calculate the corresponding video time
-    #     radar_time_seconds = self.radar_visualization.frame_index / self.radar_visualization.frame_rate
-    #     video_time_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
-    #     self.video_player.media_player.setPosition(video_time_ms)
     def syncWithSlider(self, value):
-        # Update video
+        # Update video position based on slider value
         total_duration = self.video_player.media_player.duration()
         new_video_position = total_duration * value / 1000
         self.video_player.set_position(new_video_position + self.radar_visualization.video_offset_ms)
 
-        # Update radar visualization
+        # Update radar visualization frame
         radar_frame_rate = self.radar_visualization.frame_rate
         new_radar_frame = int((new_video_position + self.radar_visualization.video_offset_ms) / 1000 * radar_frame_rate)
         self.radar_visualization.update_frame(new_radar_frame)
 
-        # Update LiDAR visualization to match the new radar frame
+        # Update LiDAR visualization to match the radar frame
         self.lidar_handler.update_to_match_radar(new_radar_frame)
 
-        # Optionally, update the video position again to ensure synchronization
-        radar_time_seconds = new_radar_frame / self.radar_visualization.frame_rate
-        video_time_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
-        self.video_player.media_player.setPosition(video_time_ms)
-    def on_radar_frame_update(self, frame_index):
-        # Calculate the video position based on the radar frame
+    def syncWithFrameIndex(self, frame_index):
+        # Calculate the video position based on radar frame index
         radar_time_seconds = frame_index / self.radar_visualization.frame_rate
         video_position_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
 
-        # Update video player position
+        # Update the video position
         self.video_player.media_player.setPosition(video_position_ms)
 
-        # Pause the video player if it's currently playing
-        if self.video_player.media_player.state() == QMediaPlayer.PlayingState:
-            self.video_player.media_player.pause()
+        # Update the LiDAR visualization to match the radar frame
+        self.lidar_handler.update_to_match_radar(frame_index)
+
+    def on_radar_frame_update(self, frame_index):
+        # This method can be used for additional callbacks when radar frame updates
+        pass
+
     def update_sensors(self, frame_number):
-        # Calculate the corresponding video position in milliseconds
+        # Update the video position based on radar frame number
         radar_time_seconds = frame_number / self.radar_visualization.frame_rate
         video_position_ms = radar_time_seconds * 1000 + self.radar_visualization.video_offset_ms
         self.video_player.media_player.setPosition(video_position_ms)

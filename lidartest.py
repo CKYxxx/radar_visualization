@@ -25,7 +25,7 @@ class LidarTestWindow(QWidget):
         return cloud_arrays
 
     def start_playback(self):
-        self.timer.start(100)  # Adjust the interval as needed
+        self.timer.start(110)  # Adjust the interval as needed
 
     def stop_playback(self):
         self.timer.stop()
