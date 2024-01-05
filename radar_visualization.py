@@ -8,7 +8,7 @@ from ui_elements import create_color_coding_ui
 from PyQt5.QtMultimedia import QMediaPlayer
 
 class RadarVisualization(QWidget):
-    def __init__(self, parent=None, frame_rate=20,update_callback=None,control_handler=None):
+    def __init__(self, parent=None, frame_rate=20,update_callback=None,control_handler=None,video_offset_ms=0):
         super().__init__(parent)
         self.setup_view_widget()
         self.frame_index = 1
@@ -16,7 +16,7 @@ class RadarVisualization(QWidget):
         self.scatter_plot = None
         self.current_color_coding = None
         self.frame_rate = frame_rate
-        self.video_offset_ms = 0
+        self.video_offset_ms = video_offset_ms
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update)
@@ -98,7 +98,8 @@ class RadarVisualization(QWidget):
         points = frame_data[['X Position (m)', 'Y Position (m)', 'Z Position (m)']].values
         points[:, 1] *= -1  # Flip the Y-axis
         if colors is None:
-            colors = np.random.rand(len(points), 4)
+            # colors = np.random.rand(len(points), 4)
+            colors = np.array([[1, 1, 0, 1]] * len(points))  # RGBA for yellow
         if self.scatter_plot is None:
             self.scatter_plot = gl.GLScatterPlotItem(pos=points, size=0.1, color=colors, pxMode=False)
             self.view_widget.addItem(self.scatter_plot)

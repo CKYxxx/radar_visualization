@@ -2,6 +2,7 @@ import velodyne_decoder as vd
 import numpy as np
 import pyqtgraph.opengl as gl
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout
+from PyQt5.QtCore import QTimer
 
 class LidarTestWindow(QWidget):
     def __init__(self, parent=None):
@@ -9,22 +10,40 @@ class LidarTestWindow(QWidget):
         self.layout = QVBoxLayout(self)
         self.view_widget = gl.GLViewWidget()
         self.layout.addWidget(self.view_widget)
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_display)
+        self.frame_index = 0
 
     def setup_lidar_data(self, pcap_path, model):
         self.lidar_data = self.read_lidar_data(pcap_path, model)
 
     def read_lidar_data(self, pcap_path, model):
-        config = vd.Config(model='VLP-16', rpm=600)
+        config = vd.Config(model=model, rpm=600)
         cloud_arrays = []
         for stamp, points in vd.read_pcap(pcap_path, config):
             cloud_arrays.append(points)
         return cloud_arrays
 
-    def display_lidar_data(self):
-        # Assuming the point cloud data is in the format (x, y, z)
-        for points in self.lidar_data:
+    def start_playback(self):
+        self.timer.start(100)  # Adjust the interval as needed
+
+    def stop_playback(self):
+        self.timer.stop()
+
+    def update_display(self):
+        if self.frame_index < len(self.lidar_data):
+            self.view_widget.items.clear()  # Clear existing points
+            points = self.lidar_data[self.frame_index]
             pos = points[:, :3]  # Extract x, y, z positions
-            # Add more code here to display the point cloud
+            color = np.full((len(points), 4), [1, 0, 0, 1])  # Example: Red color
+            scatter = gl.GLScatterPlotItem(pos=pos, color=color, size=0.1)
+            self.view_widget.addItem(scatter)
+            self.frame_index += 1
+        else:
+            self.stop_playback()  # Stop when all frames are displayed
+
+    def display_lidar_data(self):
+        self.start_playback()  # Start displaying data
 
 if __name__ == "__main__":
     app = QApplication([])
