@@ -74,8 +74,9 @@ class RadarVisualization(QWidget):
                     self.update_scatter_plot(frame_data)
 
                 # Update the video position to sync with radar frame
-                if hasattr(self, 'control_handler'):
-                    self.control_handler.update_video_position()
+                # if hasattr(self, 'control_handler'):
+                #     pass  # No action if control_handler is present
+# self.control_handler.update_video_position()
 
                 self.frame_index += 1
             else:
@@ -86,8 +87,8 @@ class RadarVisualization(QWidget):
         print(f"Updating radar frame: {self.frame_index}")  # Debug print
 
         # Call method in ControlHandler after updating radar frame
-        if self.control_handler:
-            self.control_handler.on_radar_frame_update(self.frame_index)
+        # if self.control_handler:
+        #     self.control_handler.on_radar_frame_update(self.frame_index)
 
 
     def update_frame(self, frame_number):
