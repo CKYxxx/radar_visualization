@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
         self.initUI()
         self.visualization_timer = QTimer(self)
         self.visualization_timer.timeout.connect(self.update_visualization)
+        
 
     def initUI(self):
         central_widget = QWidget()
@@ -67,7 +68,7 @@ class MainWindow(QMainWindow):
         self.radar_visualization.set_control_handler(self.control_handler)
 
         # UI Elements
-        self.ui_elements = UIElements(self.control_handler, self.video_player, self.radar_visualization)
+        self.ui_elements = UIElements(self.control_handler, self.video_player, self.radar_visualization, self.lidar_handler)
         main_layout.addWidget(self.ui_elements.create_control_buttons())
         main_layout.addWidget(self.ui_elements.create_video_slider())
         main_layout.addWidget(create_color_coding_ui(self.radar_visualization.update_color_coding))
@@ -75,7 +76,10 @@ class MainWindow(QMainWindow):
         # Add Radar Visualization and Video Player as dock widgets
         self.addDockWidget(Qt.TopDockWidgetArea, self.createDockWidget("Visualization", self.visualization_widget))
         self.addDockWidget(Qt.BottomDockWidgetArea, self.createDockWidget("Video Player", self.video_player))
-
+        # Create frame display widget and add it to the layout
+        frame_display_widget = self.ui_elements.create_frame_display()
+        main_layout.addWidget(frame_display_widget)
+        
     def update_visualization(self):
         # Update radar and lidar visualizations
         self.radar_visualization.update()
@@ -88,7 +92,27 @@ class MainWindow(QMainWindow):
                 self.video_player.play()
                 del self.delayed_video_start_frame  # Remove attribute after starting video
 
-      
+        # Fetch current and total frames for video, radar, and lidar
+        current_video_frame = self.video_player.get_current_frame()  # Implement this in VideoPlayer
+        total_video_frames = self.video_player.get_total_frames()    # Implement this in VideoPlayer
+        current_radar_frame = self.radar_visualization.get_current_frame_index()
+        total_radar_frames = len(self.radar_visualization.radar_data['Frame'].unique())
+        current_lidar_frame = self.lidar_handler.get_current_frame_index()  # Implement this in LidarHandler
+        total_lidar_frames = len(self.lidar_handler.lidar_data)             # Assuming this returns total lidar frames
+
+        # Update the frame display in the UI
+        self.ui_elements.update_frame_display(
+            current_video_frame, total_video_frames,
+            current_radar_frame, total_radar_frames,
+            current_lidar_frame, total_lidar_frames
+        )
+        # Calculate the number of detections in the current radar frame
+        current_frame = self.radar_visualization.get_current_frame_index()
+        frame_data = self.radar_visualization.radar_data[self.radar_visualization.radar_data['Frame'] == current_frame]
+        num_detections = len(frame_data)
+
+        # Update the detections display in the UI
+        self.ui_elements.update_detections_display(num_detections)
 
    
     def createDockWidget(self, title, widget):

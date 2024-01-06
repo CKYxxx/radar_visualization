@@ -181,3 +181,7 @@ class LidarHandler:
                 writer.writerow([i, timestamp])
 
         print(f"Saved LiDAR timestamps to {filepath}")
+
+    def get_current_frame_index(self):
+        # Return the current frame index
+        return self.frame_index
