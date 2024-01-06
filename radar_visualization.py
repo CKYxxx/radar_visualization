@@ -8,7 +8,7 @@ from ui_elements import create_color_coding_ui
 from PyQt5.QtMultimedia import QMediaPlayer
 
 class RadarVisualization(QWidget):
-    def __init__(self, view_widget, frame_rate=20, update_callback=None, control_handler=None, video_offset_ms=0,sensor_extrinsics=None):
+    def __init__(self, view_widget, frame_rate=10, update_callback=None, control_handler=None, video_offset_ms=0,sensor_extrinsics=None):
         super().__init__()
         self.view_widget = view_widget
         self.frame_index = 1
@@ -124,8 +124,7 @@ class RadarVisualization(QWidget):
 
     def set_control_handler(self, control_handler):
         self.control_handler = control_handler
-    # def get_widget(self):
-    #     return self.view_widget
+    
     def redraw_current_frame(self):
         # Check if the current frame index is valid
         if self.frame_index in self.radar_data['Frame'].unique():
