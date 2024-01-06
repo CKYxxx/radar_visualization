@@ -36,8 +36,9 @@ class MainWindow(QMainWindow):
             }
         }
         
-        self.frame_rate = 10  # Radar frame rate in Hz
-
+        self.radar_frame_rate = 10  # Radar frame rate in Hz
+        self.lidar_frame_rate = 10
+        self.video_frame_rate = 30
         self.initUI()
         self.visualization_timer = QTimer(self)
         self.visualization_timer.timeout.connect(self.update_visualization)
@@ -52,15 +53,15 @@ class MainWindow(QMainWindow):
         self.visualization_widget = GLViewWidget()
 
         # Instantiate RadarVisualization
-        self.radar_visualization = RadarVisualization(self.visualization_widget, frame_rate=self.frame_rate, video_offset_ms=self.time_offsets['camera'],sensor_extrinsics=self.sensor_extrinsics)
+        self.radar_visualization = RadarVisualization(self.visualization_widget, frame_rate=self.radar_frame_rate, video_offset_ms=self.time_offsets['camera'],sensor_extrinsics=self.sensor_extrinsics)
         self.radar_visualization.setup('/home/s0001593/Downloads/provizio/Dataset_mid_range/Radar/radar_fft.csv')
 
         # Instantiate VideoPlayer
-        self.video_player = VideoPlayer('/home/s0001593/Downloads/provizio/Dataset_mid_range/Camera/camera.mkv')
+        self.video_player = VideoPlayer('/home/s0001593/Downloads/provizio/Dataset_mid_range/Camera/camera.mkv',self.video_frame_rate)
         self.video_player.set_offset(self.time_offsets['camera'])
 
         # Instantiate LidarHandler using the same GLViewWidget from RadarVisualization
-        self.lidar_handler = LidarHandler(self.visualization_widget, self.time_offsets['velodyne'], self.frame_rate,self.sensor_extrinsics)
+        self.lidar_handler = LidarHandler(self.visualization_widget, self.time_offsets['velodyne'], self.radar_frame_rate,self.sensor_extrinsics)
         self.lidar_handler.load_data('/home/s0001593/Downloads/provizio/Dataset_mid_range/Lidar/velodyne.pcap', 'VLP-16')
 
         # Instantiate ControlHandler

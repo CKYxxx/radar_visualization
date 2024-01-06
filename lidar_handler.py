@@ -77,7 +77,7 @@ class LidarHandler:
     #     lidar_frame_index = self.calculate_lidar_index(radar_frame_index)
     #     self.update_visualization_for_frame(lidar_frame_index)
     def calculate_lidar_index(self, radar_frame_index):
-        closest_lidar_index = radar_frame_index + 45
+        closest_lidar_index = radar_frame_index + int(self.lidar_time_offset/(1000/self.radar_frame_rate))
         # print(f"xxx Calculating LiDAR index for radar frame index: {radar_frame_index}")
 
         # # Calculate the corresponding LiDAR time using radar frame index, frame rate, and offset

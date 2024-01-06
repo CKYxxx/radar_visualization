@@ -8,13 +8,13 @@ from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtWidgets import QVBoxLayout, QWidget
 
 class VideoPlayer(QWidget):
-    def __init__(self, video_path, parent=None):
+    def __init__(self, video_path,frame_rate, parent=None):
         super().__init__(parent)
         self.media_player = QMediaPlayer(None, QMediaPlayer.VideoSurface)
         self.video_widget = QVideoWidget()
         # self.media_player.stateChanged.connect(self.state_changed)
         # self.media_player.mediaStatusChanged.connect(self.status_changed)
-        self.frame_rate = 30
+        self.frame_rate = frame_rate
         layout = QVBoxLayout()
         layout.addWidget(self.video_widget)
         self.setLayout(layout)
