@@ -7,7 +7,12 @@ class ControlHandler:
         self.lidar_handler = lidar_handler
         self.main_window = main_window
 
-    def startVisualization(self):
+    def startVisualization(self, current_radar_frame):
+        # Check if lidar_handler is not None before calling its methods
+        if self.lidar_handler is not None:
+            lidar_index = self.lidar_handler.calculate_lidar_index(current_radar_frame)
+            self.lidar_handler.set_frame_index(lidar_index)
+
         # Determine the correct time to start the video based on the radar frame and time offset
         if self.main_window.time_offsets['camera'] >= 0:
             # Positive or zero offset: Start video at a specific position
@@ -20,10 +25,15 @@ class ControlHandler:
             delay_in_frames = abs(self.main_window.time_offsets['camera']) / 1000 * self.radar_visualization.frame_rate
             self.main_window.delayed_video_start_frame = int(delay_in_frames)
 
-        # Set the initial radar and LiDAR frame indices and start visualization
+        # Set the initial radar frame index and start visualization
         current_radar_frame = self.radar_visualization.get_current_frame_index()
-        self.lidar_handler.set_frame_index(self.lidar_handler.calculate_lidar_index(current_radar_frame))
+
+        # Check again if lidar_handler is not None before setting the lidar frame index
+        if self.lidar_handler is not None:
+            self.lidar_handler.set_frame_index(self.lidar_handler.calculate_lidar_index(current_radar_frame))
+
         self.main_window.visualization_timer.start(100)  # Adjust the interval as needed
+
 
 
 
