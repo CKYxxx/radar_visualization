@@ -8,6 +8,7 @@ from ControlHandler import ControlHandler
 from ui_elements import UIElements, create_color_coding_ui
 import pyqtgraph.opengl as gl
 from pyqtgraph.opengl import GLViewWidget
+from grid_config import GridConfig
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -81,6 +82,10 @@ class MainWindow(QMainWindow):
         frame_display_widget = self.ui_elements.create_frame_display()
         main_layout.addWidget(frame_display_widget)
         
+        # Initialize and add the grid to the visualization widget
+        self.grid_config = GridConfig(self.visualization_widget, x_axis_range=100, y_axis_range=50, grid_spacing=5)
+        self.grid_config.initialize_grid()
+
     def update_visualization(self):
         # Update radar and lidar visualizations
         self.radar_visualization.update()
