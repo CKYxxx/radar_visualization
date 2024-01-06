@@ -1,0 +1,36 @@
+{
+    "sensor_data_paths": {
+        "radar": "/home/s0001593/Downloads/provizio/Dataset_mid_range/Radar/radar_fft.csv",
+        "video": "/home/s0001593/Downloads/provizio/Dataset_mid_range/Camera/camera.mkv",
+        "lidar": "/home/s0001593/Downloads/provizio/Dataset_mid_range/Lidar/velodyne.pcap"
+    },
+    "time_offsets": {
+        "velodyne": 4550,
+        "oxts": 2050,
+        "camera": -14800
+    },
+    "sensor_extrinsics": {
+        "radar": {
+            "position": {"x": 1.98, "y": -0.005, "z": 1.36},
+            "orientation": {"yaw": 0, "pitch": 0, "roll": 0}
+        },
+        "velodyne": {
+            "position": {"x": 1.158, "y": 0.0, "z": 1.65},
+            "orientation": {"yaw": 1, "pitch": 0, "roll": 0}
+        },
+        "camera": {
+            "position": {"x": 1.602, "y": 0.106, "z": 1.72},
+            "orientation": {"yaw": 0, "pitch": 2, "roll": 0}
+        }
+    },
+    "frame_rates": {
+        "radar": 10,
+        "lidar": 10,
+        "video": 30
+    },
+    "grid_config": {
+        "x_axis_range": 100,
+        "y_axis_range": 50,
+        "grid_spacing": 5
+    }
+}

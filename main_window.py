@@ -9,6 +9,7 @@ from ui_elements import UIElements, create_color_coding_ui
 import pyqtgraph.opengl as gl
 from pyqtgraph.opengl import GLViewWidget
 from grid_config import GridConfig
+import json
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -17,29 +18,17 @@ class MainWindow(QMainWindow):
         # Initialize the first_update attribute
         self.first_update = True
         
-        self.time_offsets = {
-            'velodyne': 4550,   # +4.55s
-            'oxts': 2050,       # +2.05s
-            'camera': -14800    # -14.8s
-        }
-        self.sensor_extrinsics = {
-            'radar': {
-                'position': {'x': 1.98, 'y': -0.005, 'z': 1.36},
-                'orientation': {'yaw': 0, 'pitch': 0, 'roll': 0}
-            },
-            'velodyne': {
-                'position': {'x': 1.158, 'y': 0.0, 'z': 1.65},
-                'orientation': {'yaw': 1, 'pitch': 0, 'roll': 0}
-            },
-            'camera': {
-                'position': {'x': 1.602, 'y': 0.106, 'z': 1.72},
-                'orientation': {'yaw': 0, 'pitch': 2, 'roll': 0}
-            }
-        }
-        
-        self.radar_frame_rate = 10  # Radar frame rate in Hz
-        self.lidar_frame_rate = 10
-        self.video_frame_rate = 30
+        # Load configurations from JSON file
+        with open('config.json', 'r') as file:
+            config = json.load(file)
+
+        # Replace hardcoded settings with values from config
+        self.time_offsets = config['time_offsets']
+        self.sensor_extrinsics = config['sensor_extrinsics']
+        self.radar_frame_rate = config['frame_rates']['radar']
+        self.lidar_frame_rate = config['frame_rates']['lidar']
+        self.video_frame_rate = config['frame_rates']['video']
+
         self.initUI()
         self.visualization_timer = QTimer(self)
         self.visualization_timer.timeout.connect(self.update_visualization)
@@ -49,21 +38,32 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
-
+        with open('config.json', 'r') as file:
+            config = json.load(file)
         # Single GLViewWidget for both Radar and LiDAR
         self.visualization_widget = GLViewWidget()
 
-        # Instantiate RadarVisualization
-        self.radar_visualization = RadarVisualization(self.visualization_widget, frame_rate=self.radar_frame_rate, video_offset_ms=self.time_offsets['camera'],sensor_extrinsics=self.sensor_extrinsics)
-        self.radar_visualization.setup('/home/s0001593/Downloads/provizio/Dataset_mid_range/Radar/radar_fft.csv')
+       # RadarVisualization setup
+        self.radar_visualization = RadarVisualization(
+            self.visualization_widget, 
+            frame_rate=self.radar_frame_rate, 
+            video_offset_ms=self.time_offsets['camera'], 
+            sensor_extrinsics=self.sensor_extrinsics
+        )
+        self.radar_visualization.setup(config['sensor_data_paths']['radar'])
 
-        # Instantiate VideoPlayer
-        self.video_player = VideoPlayer('/home/s0001593/Downloads/provizio/Dataset_mid_range/Camera/camera.mkv',self.video_frame_rate)
+        # VideoPlayer setup
+        self.video_player = VideoPlayer(config['sensor_data_paths']['video'], self.video_frame_rate)
         self.video_player.set_offset(self.time_offsets['camera'])
 
-        # Instantiate LidarHandler using the same GLViewWidget from RadarVisualization
-        self.lidar_handler = LidarHandler(self.visualization_widget, self.time_offsets['velodyne'], self.radar_frame_rate,self.sensor_extrinsics)
-        self.lidar_handler.load_data('/home/s0001593/Downloads/provizio/Dataset_mid_range/Lidar/velodyne.pcap', 'VLP-16')
+        # LidarHandler setup
+        self.lidar_handler = LidarHandler(
+            self.visualization_widget, 
+            self.time_offsets['velodyne'], 
+            self.radar_frame_rate, 
+            self.sensor_extrinsics
+        )
+        self.lidar_handler.load_data(config['sensor_data_paths']['lidar'], 'VLP-16')
 
         # Instantiate ControlHandler
         self.control_handler = ControlHandler(self.radar_visualization, self.video_player, self.lidar_handler, self)
@@ -83,7 +83,7 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(frame_display_widget)
         
         # Initialize and add the grid to the visualization widget
-        self.grid_config = GridConfig(self.visualization_widget, x_axis_range=100, y_axis_range=50, grid_spacing=5)
+        self.grid_config = GridConfig(self.visualization_widget, **config['grid_config'])
         self.grid_config.initialize_grid()
 
     def update_visualization(self):
