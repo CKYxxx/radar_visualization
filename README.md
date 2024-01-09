@@ -12,3 +12,6 @@ if you want to have differnt config.json files for different dataset, search : w
 
 In the control window, just start and stop buttons are correctly implemented right now. Sadly the other functions worked before, just after some changes they didn't work anymore but should be easy fixes. 
 
+TO DO:
+
+to easily visualize specifc frame, we need to fix the slider bar function. the slider method is there, just not showing up in the window. Then we can fix the step forward and backward fucntion if needed.
